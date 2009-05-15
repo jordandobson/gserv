@@ -1,0 +1,7 @@
+History.txt
+Manifest.txt
+README.txt
+Rakefile
+bin/gserv
+lib/gserv.rb
+test/test_gserv.rb
