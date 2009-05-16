@@ -24,14 +24,6 @@ class TestGserv < Test::Unit::TestCase
     assert @server.stopped?
   end
   
-  def test_request
-    @server.start
-    res = Net::HTTP.get_response URI.parse("http://localhost:#{@port}")
-    assert_equal "200", res.code
-    assert_equal '/',   @server.path
-    assert_equal '1.1', @server.protocol
-  end
-  
   def test_request_time
     @server.start
     res = Net::HTTP.get_response URI.parse("http://localhost:#{@port}/time")
@@ -39,16 +31,24 @@ class TestGserv < Test::Unit::TestCase
     assert Time.parse(res.body)
   end
   
-  def test_request_raises
+  def test_request_returns_404
     @server.start
-    res = Net::HTTP.get_response URI.parse("http://localhost:#{@port}/404")
+    res = Net::HTTP.get_response URI.parse("http://localhost:#{@port}/do404")
     assert_equal "404", res.code
   end
   
-  def test_request_raises
+  def test_request_returns_500
     @server.start
-    res = Net::HTTP.get_response URI.parse("http://localhost:#{@port}/500")
+    res = Net::HTTP.get_response URI.parse("http://localhost:#{@port}/do500")
     assert_equal "500", res.code
+  end
+
+  def test_request_returns_html
+    @server.start
+    res = Net::HTTP.get_response URI.parse("http://localhost:#{@port}/hello.html")
+    expected = IO.read("#{File.dirname(__FILE__)}/assets/hello.html")
+    assert_equal "200", res.code
+    assert_equal expected, res.body
   end
  
 end

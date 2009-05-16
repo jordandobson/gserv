@@ -4,7 +4,8 @@ require 'erb'
 class Gserv < GServer 
 
   VERSION = '1.0.0'
-  CRLF = "\r\n"
+  CRLF    = "\r\n"
+  ROOT    = "test/assets"
   
   attr_accessor :path, :protocol, :headers, :servlets 
   
@@ -42,14 +43,73 @@ class Gserv < GServer
   end
   
   def check_request
-    case @path
-    when "/404"
-      "HTTP/1.1 404 Not Found"
-    when "/500"
-      "HTTP/1.1 500 Internal Server Error"
-    else
-      "HTTP/1.1 200 OK"
+   begin
+     servlet = parse_for_servlet
+     r = ""
+     if servlet
+      r = "HTTP/1.1 200 OK#{CRLF}#{servlet}"
+     else
+       file = parse_for_file
+       if file
+         r << "HTTP/1.1 200 OK#{CRLF}"
+         r << "Date: #{request_date}#{CRLF}"
+         r << "Content-Length: #{file.length}#{CRLF}"
+         r << "Content-Type: text/html#{CRLF}"
+         r << "#{CRLF}#{file}"
+       else
+         r = "HTTP/1.1 404 Not Found"
+       end
+     end
+   rescue
+     r = "HTTP/1.1 500 Internal Server Error"
+   end
+   r
+  end
+
+  def parse_for_servlet
+    path = @path.sub(/^\/|\/$/, "")
+    begin
+      if Servlets::SERVS.include? path
+        Servlets.instance_eval(path)
+      else
+        false
+      end
+    rescue
+      raise 500
     end
   end
+ 
+  def parse_for_file
+    root_path = "#{ROOT}#{@path}"
+    if File.exist?(root_path)
+      if root_path =~ /.+[.]erb$/
+        false
+      else
+        IO.read(root_path)
+      end
+    else
+      false
+    end
+  end
+  
+  def request_date
+    Time.now.strftime("%a, %d %b %Y %H:%M:%S %Z")
+  end
+  
+end
+
+class Gserv
+  class Servlets
+  
+    SERVS = %w{do500 time}
+  
+    def self.do500
+      raise 500
+    end
     
+    def self.time
+      "The time is: #{Time.now}"
+    end
+  
+  end
 end
