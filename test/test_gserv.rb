@@ -39,7 +39,7 @@ class TestGserv < Test::Unit::TestCase
     @server.stop
   end
   
-  def test_request_returns_500
+  def test_missing_servlet_returns_500
     @server.start
     res = Net::HTTP.get_response URI.parse("http://localhost:#{@port}/do500")
     assert_equal "500", res.code
@@ -61,6 +61,13 @@ class TestGserv < Test::Unit::TestCase
     expected = IO.read("#{File.dirname(__FILE__)}/assets/hello.html")
     assert_equal "200", res.code
     assert_equal expected, res.body
+    @server.stop
+  end
+  
+  def test_request_bad_erb_returns_500
+    @server.start
+    res = Net::HTTP.get_response URI.parse("http://localhost:#{@port}/bad_erb.erb")
+    assert_equal "500", res.code
     @server.stop
   end
 

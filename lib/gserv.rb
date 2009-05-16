@@ -80,15 +80,19 @@ class Gserv < GServer
   end
  
   def parse_for_file
-    root_path = "#{ROOT}#{@path}"
-    if File.exist?(root_path)
-      if root_path =~ /.+[.]erb$/
-        ERB.new(File.read(root_path)).result(binding)
+    begin
+      root_path = "#{ROOT}#{@path}"
+      if File.exist?(root_path)
+        if root_path =~ /.+[.]erb$/
+          ERB.new(IO.read(root_path)).result(binding)
+        else
+          IO.read(root_path)
+        end
       else
-        IO.read(root_path)
+        false
       end
-    else
-      false
+    rescue
+      raise 500
     end
   end
   
