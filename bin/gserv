@@ -1,3 +1,10 @@
 #!/usr/bin/env ruby
-
-abort "you need to write me"
+ 
+case ARGV[0]
+when '-t'
+  require '../lib/tcpserv'
+when '-g'
+  require '../lib/gserv'
+else
+  puts 'USAGE: gserv [-t for TCPServer, -g for GServer]'
+end

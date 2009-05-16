@@ -1,27 +1,25 @@
-# require "uri"
-# require "test/unit"
-# require "tcpserv"
-# require "net/http"
-# require "time"
-# 
-# class TestGserv < Test::Unit::TestCase
-# 
-#   def setup
-#     @port = 12321
-#     @server = Tcpserv.new(@port)
-#   end
-#   
-#   def teardown
-#     @server.stop
-#   end
-#   
-#   def test_start_and_stop_server
-#     assert @server.stopped?
-#     @server.start
-#     assert !@server.stopped?
-#     @server.stop
-#     assert @server.stopped?
-#   end
+require "uri"
+require "test/unit"
+require "tcpserv"
+require "net/http"
+require "time"
+
+class TestTcpserv < Test::Unit::TestCase
+
+  def setup
+    @port = 12321
+    @server = Tcpserv.new(@port)
+  end
+  
+  def teardown
+    # @server.close
+  end
+
+  
+  def test_start_and_stop_server
+    assert_equal true, "true"
+    assert true
+  end
 #   
 #   def test_request_time
 #     @server.start
@@ -70,4 +68,4 @@
 #     @server.stop
 #   end
 # 
-# end
+end

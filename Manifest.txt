@@ -4,4 +4,8 @@ README.txt
 Rakefile
 bin/gserv
 lib/gserv.rb
+lib/tcpserv.rb
+lib/servlets.rb
+lib/response.rb
+lib/request.rb
 test/test_gserv.rb
