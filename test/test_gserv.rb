@@ -9,7 +9,6 @@ class TestGserv < Test::Unit::TestCase
   def setup
     @port = 12321
     @server = Gserv.new(@port)
-    
   end
   
   def teardown
