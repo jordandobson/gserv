@@ -1,61 +1,30 @@
 require 'gserver'
 require 'erb'
 
-class Gserv < GServer 
+class Response
 
-  VERSION = '1.0.0'
-  CRLF    = "\r\n"
-  ROOT    = "test/assets"
+  attr_accessor :path, :root, :crlf
   
-  attr_accessor :path, :protocol, :headers, :servlets 
-  
-  def initialize(port=12321, *args)
-    super
-    @servlets = {}
+  def initialize server, root, crlf
+    @server = server
+    @root   = root
+    @crlf = crlf
   end
   
-  def serve(io)
-    req = http_in io
-    res = check_request
-    io.puts res
-  end
-  
-  def http_in io
-    req = ""
-    io.each_line do |l|
-      break if l == CRLF
-      req << l
-    end
-    parse req
-  end
-  
-  def parse req
-    @headers = {}
-    req.each_line do |l|
-      l.strip!
-      if l =~ /GET (\/[^\s]*) HTTP\/(\d.\d)/
-        @path       = $1
-        @protocol   = $2
-      elsif l =~ /(.+): (.+)/
-        @headers[$1] = $2
-      end
-    end
-  end
-  
-  def check_request
-   begin
+  def give_response
+    begin
      servlet = parse_for_servlet
      r = ""
      if servlet
-      r = "HTTP/1.1 200 OK#{CRLF}#{servlet}"
+      r = "HTTP/1.1 200 OK#{@crlf}#{servlet}"
      else
        file = parse_for_file
        if file
-         r << "HTTP/1.1 200 OK#{CRLF}"
-         r << "Date: #{request_date}#{CRLF}"
-         r << "Content-Length: #{file.length}#{CRLF}"
-         r << "Content-Type: text/html#{CRLF}"
-         r << "#{CRLF}#{file}"
+         r << "HTTP/1.1 200 OK#{@crlf}"
+         r << "Date: #{request_date}#{@crlf}"
+         r << "Content-Length: #{file.length}#{@crlf}"
+         r << "Content-Type: text/html#{@crlf}"
+         r << "#{@crlf}#{file}"
        else
          r = "HTTP/1.1 404 Not Found"
        end
@@ -69,8 +38,8 @@ class Gserv < GServer
   def parse_for_servlet
     path = @path.sub(/^\/|\/$/, "")
     begin
-      if Servlets::SERVS.include? path
-        Servlets.instance_eval(path)
+      if @server::Servlets::SERVS.include? path
+        eval("#{@server}::Servlets.#{path}")
       else
         false
       end
@@ -81,7 +50,7 @@ class Gserv < GServer
  
   def parse_for_file
     begin
-      root_path = "#{ROOT}#{@path}"
+      root_path = "#{@root}#{@path}"
       if File.exist?(root_path)
         if root_path =~ /.+[.]erb$/
           ERB.new(IO.read(root_path)).result(binding)
@@ -99,14 +68,64 @@ class Gserv < GServer
   def request_date
     Time.now.strftime("%a, %d %b %Y %H:%M:%S %Z")
   end
+
+end
+
+class Request
+
+  attr_accessor :path, :crlf
+  
+  def initialize crlf
+    @crlf = crlf
+  end 
+
+  def http_in io
+    req = ""
+    io.each_line do |l|
+      break if l == @crlf
+      req << l
+    end
+    parse req
+  end
+  
+  def parse req
+    req.each_line do |l|
+      l.strip!
+      if l =~ /GET (\/[^\s]*) HTTP\/\d.\d/
+        @path = $1
+      end
+    end
+    @path
+  end 
+
+end
+
+class Gserv < GServer 
+
+  VERSION = '1.0.0'
+  CRLF    = "\r\n"
+  ROOT    = "test/assets" 
+  
+  def initialize(port=12321, *args)
+    super
+    @request  = Request.new CRLF
+    @response = Response.new Gserv, ROOT, CRLF
+  end
+  
+  def serve(io)
+    req = @request.http_in io
+    @response.path = req
+    res = @response.give_response
+    io.puts res
+  end
   
 end
 
 class Gserv
   class Servlets
   
-    SERVS = %w{do500 time}
-  
+    SERVS     = %w{do500 time}
+    
     def self.do500
       raise 500
     end
@@ -114,6 +133,5 @@ class Gserv
     def self.time
       "The time is: #{Time.now}"
     end
-  
   end
 end
